@@ -36,7 +36,7 @@
   #struk .feed{height:10mm}
   @page{size:58mm auto;margin:0}
   @media print{
-    #secPrev{display:block !important} #tabTrx,#tabSet{display:none !important}
+    #toc{display:none !important} #secPrev{display:block !important} #tabTrx,#tabSet{display:none !important}
     body{background:#fff}
     body *{visibility:hidden}
     #struk,#struk *{visibility:visible}
@@ -144,6 +144,33 @@
   </div>
 </section>
 </main>
+<footer class="max-w-6xl mx-auto px-3 pb-8 text-center text-xs text-slate-500">
+  <p><b>Gunakan aplikasi dengan bijak.</b> Aplikasi ini tidak berafiliasi dengan bank, e-wallet, PLN, atau penyedia layanan mana pun.</p>
+  <button type="button" id="tocLink" class="underline text-blue-700 mt-1">Syarat &amp; Ketentuan</button>
+</footer>
+
+<div id="toc" class="fixed inset-0 z-50 items-center justify-center p-3" style="display:none;background:rgba(15,23,42,.75)">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col" style="max-height:92vh">
+    <div class="px-5 pt-4 pb-2 border-b">
+      <h2 class="font-bold text-lg">📜 Syarat &amp; Ketentuan Penggunaan</h2>
+      <p class="mt-2 text-sm font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">⚠️ Gunakan aplikasi dengan bijak.</p>
+    </div>
+    <div class="px-5 py-3 overflow-y-auto text-sm leading-relaxed space-y-3 text-slate-700" style="flex:1">
+      <div><b>1. Tentang aplikasi</b><br>Aplikasi ini adalah alat bantu untuk menyusun dan mencetak struk dari data transaksi yang benar-benar terjadi. Aplikasi ini <b>bukan aplikasi resmi</b> dan <b>tidak berafiliasi</b> dengan BRI/BRILink, DANA, BCA, Mandiri, BNI, SeaBank, GoPay, OVO, PLN, maupun pihak lain. Semua nama dan merek adalah milik pemiliknya masing-masing.</div>
+      <div><b>2. Gunakan dengan bijak</b><br>Aplikasi hanya boleh dipakai untuk mencetak bukti transaksi yang <b>nyata</b>. Dilarang memalsukan atau mengubah nominal, nama, nomor, atau data lain, dan dilarang membuat bukti transaksi fiktif untuk menipu, penggelapan, pencucian uang, atau tujuan lain yang melanggar hukum.</div>
+      <div><b>3. Tanggung jawab pengguna</b><br>Hasil pembacaan otomatis (OCR) bisa salah. Periksa kembali nominal, nomor rekening, ID pelanggan, nomor token, dan data lain sebelum mencetak. Anda bertanggung jawab penuh atas struk yang dicetak, atas biaya admin yang Anda tetapkan, dan atas kepatuhan Anda terhadap hukum serta ketentuan penyedia layanan terkait.</div>
+      <div><b>4. Data dan privasi</b><br>Pembacaan screenshot dan pembuatan struk berlangsung di perangkat Anda. Screenshot tidak diunggah ke server milik pengembang. Pengaturan toko dan logo disimpan di penyimpanan lokal perangkat Anda. Pustaka pendukung (misalnya OCR) dimuat dari layanan pihak ketiga. Jaga kerahasiaan data sensitif Anda dan pelanggan Anda.</div>
+      <div><b>5. Tanpa jaminan</b><br>Aplikasi disediakan "sebagaimana adanya" tanpa jaminan apa pun, termasuk ketepatan hasil baca, kesesuaian dengan semua printer, dan ketersediaan layanan. Pengembang tidak bertanggung jawab atas kerugian, kesalahan cetak, token atau nominal yang keliru, penyalahgunaan, maupun sengketa yang timbul dari pemakaian aplikasi ini.</div>
+      <div><b>6. Perubahan</b><br>Ketentuan ini dapat berubah sewaktu-waktu. Dengan menekan "Setuju &amp; Lanjutkan" atau terus memakai aplikasi, Anda dianggap telah membaca dan menyetujuinya.</div>
+      <p class="text-xs text-slate-400">Terakhir diperbarui: 22 November 2026</p>
+    </div>
+    <div class="px-5 py-4 border-t space-y-3">
+      <label id="tocAgreeBox" class="flex items-start gap-2 text-sm"><input id="tocChk" type="checkbox" class="mt-1"><span>Saya telah membaca, memahami, dan menyetujui syarat di atas, serta akan menggunakan aplikasi dengan bijak.</span></label>
+      <button type="button" id="tocOk" disabled class="w-full bg-blue-600 text-white font-semibold rounded-lg py-3 disabled:opacity-40">Setuju &amp; Lanjutkan</button>
+      <button type="button" id="tocClose" class="w-full bg-slate-200 font-semibold rounded-lg py-3" style="display:none">Tutup</button>
+    </div>
+  </div>
+</div>
 
 <style>
   .inp{display:block;width:100%;margin-top:2px;border:1px solid #cbd5e1;border-radius:.5rem;padding:.4rem .6rem;background:#fff}
@@ -513,6 +540,20 @@ $('btnReset').onclick = () => {
   FIELDS.forEach(id => $(id).value = ''); $('waktu').value = nowLocal();
   $('prevWrap').classList.add('hidden'); $('prog').classList.add('hidden'); $('file').value = ''; render();
 };
+
+/* ---------- Syarat & Ketentuan ---------- */
+const TOC_V = '1';
+function tocOpen(force) {
+  $('toc').style.display = 'flex'; document.body.style.overflow = 'hidden';
+  $('tocAgreeBox').style.display = force ? 'flex' : 'none'; $('tocOk').style.display = force ? 'block' : 'none'; $('tocClose').style.display = force ? 'none' : 'block';
+  $('tocChk').checked = false; $('tocOk').disabled = true;
+}
+function tocHide() { $('toc').style.display = 'none'; document.body.style.overflow = ''; }
+$('tocLink').onclick = () => tocOpen(false);
+$('tocClose').onclick = tocHide;
+$('tocChk').onchange = e => { $('tocOk').disabled = !e.target.checked; };
+$('tocOk').onclick = () => { try { localStorage.setItem('strukToc', TOC_V); } catch (e) {} tocHide(); };
+(function () { let ok = false; try { ok = localStorage.getItem('strukToc') === TOC_V; } catch (e) {} if (!ok) tocOpen(true); })();
 
 /* ---------- Logo ---------- */
 function setLogo(url, save) {

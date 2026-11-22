@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1d4ed8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Struk Agen">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  html,body{overscroll-behavior-y:contain;-webkit-tap-highlight-color:transparent}
+  header{padding-top:calc(.75rem + env(safe-area-inset-top))}
+  button,.tab,label[for],#drop{-webkit-user-select:none;user-select:none}
+  body{padding-bottom:env(safe-area-inset-bottom)}
+</style>
+<title>Cetak Struk Agen BRILink 58mm</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  body{background:#f1f5f9}
+  body[data-tab="trx"] #tabSet, body[data-tab="set"] #tabTrx{display:none}
+  @media(max-width:1023px){ body[data-tab="prev"] #tabTrx, body[data-tab="prev"] #tabSet, body[data-tab="trx"] #secPrev, body[data-tab="set"] #secPrev{display:none} }
+  @media(min-width:1024px){ body[data-tab="prev"] #tabSet{display:none} }
+  .tab{padding:.5rem .9rem;border-radius:.6rem;background:#e2e8f0;font-weight:600;color:#334155}
+  .tab.on{background:#1d4ed8;color:#fff}
+  #struk{width:58mm;box-sizing:border-box;background:#fff;color:#000;font-family:'Courier New',Roboto Mono,monospace;font-size:10px;line-height:1.25;padding:2mm 1mm 0;margin:0 auto;font-weight:600}
+  #struk .c{text-align:center}#struk .b{font-weight:900}
+  #struk .kv{display:flex;justify-content:space-between;gap:4px}
+  #struk .kv span:last-child{text-align:right;word-break:break-all}
+  #struk .sep{white-space:nowrap;overflow:hidden}
+  #struk .feed{height:10mm}
+  @page{size:58mm auto;margin:0}
+  @media print{
+    #secPrev{display:block !important} #tabTrx,#tabSet{display:none !important}
+    body{background:#fff}
+    body *{visibility:hidden}
+    #struk,#struk *{visibility:visible}
+    #struk{position:absolute;left:0;top:0;margin:0;box-shadow:none}
+  }
+</style>
+</head>
+<body class="text-slate-800" data-tab="trx">
+<header class="bg-blue-700 text-white px-4 py-3 shadow">
+  <h1 class="font-bold text-lg">🧾 Cetak Struk Agen BRILink</h1>
+  <p class="text-xs text-blue-100">OCR screenshot mobile banking / e-wallet → struk thermal 58mm</p>
+</header>
+
+<nav id="tabs" class="max-w-6xl mx-auto px-3 pt-3 pb-2 flex gap-2 text-sm sticky top-0 z-10 bg-slate-100">
+  <button type="button" data-tab="trx" class="tab">📄 Transaksi</button>
+  <button type="button" data-tab="set" class="tab">⚙️ Pengaturan Toko</button>
+  <button type="button" data-tab="prev" class="tab lg:hidden">🧾 Struk</button>
+</nav>
+<main class="max-w-6xl mx-auto p-3 grid lg:grid-cols-2 gap-4">
+<section class="space-y-4">
+<div id="tabTrx" class="space-y-4">
+  <!-- Upload -->
+  <div class="bg-white rounded-xl shadow p-4">
+    <h2 class="font-semibold mb-2">1. Upload Screenshot</h2>
+    <label id="drop" class="block border-2 border-dashed border-blue-300 rounded-lg p-5 text-center cursor-pointer hover:bg-blue-50">
+      <input id="file" type="file" accept="image/*" class="hidden">
+      <p class="text-sm">Klik untuk pilih gambar, <b>drag &amp; drop</b>, atau tekan <b>Ctrl+V</b> untuk paste</p>
+    </label>
+    <div id="prevWrap" class="hidden mt-3">
+      <button id="togglePrev" class="text-xs text-blue-700 underline">Sembunyikan preview</button>
+      <img id="prev" class="mt-2 max-h-72 mx-auto rounded border" alt="preview">
+    </div>
+    <div id="prog" class="hidden mt-3">
+      <div class="text-xs mb-1" id="progTxt">Memulai OCR...</div>
+      <div class="h-2 bg-slate-200 rounded"><div id="bar" class="h-2 bg-green-500 rounded" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- Form data -->
+  <div class="bg-white rounded-xl shadow p-4">
+    <h2 class="font-semibold mb-2">2. Data Transaksi <span class="text-xs font-normal text-slate-500">(bisa diedit)</span></h2>
+    <div class="grid grid-cols-2 gap-2 text-sm">
+      <label class="col-span-2 sm:col-span-1">Bank / Aplikasi<input id="src" class="inp"></label>
+      <label class="col-span-2 sm:col-span-1">Jenis Transaksi<input id="jenis" class="inp"></label>
+      <label class="col-span-2 sm:col-span-1">Tanggal &amp; Waktu<input id="waktu" type="datetime-local" step="1" class="inp"></label>
+      <label class="col-span-2 sm:col-span-1">No. Ref / ID / SN<input id="ref" class="inp"></label>
+      <label class="col-span-2 sm:col-span-1">Nama Penerima<input id="penerima" class="inp"></label>
+      <label class="col-span-2 sm:col-span-1">No. Rek / HP Tujuan<input id="rek" class="inp"></label>
+      <label class="col-span-2 sm:col-span-1">Nama Pengirim (opsional)<input id="pengirim" class="inp"></label>
+      <label class="col-span-2 sm:col-span-1">No. Pengirim (tampil 4 digit depan)<input id="noPeng" class="inp"></label>
+      <label class="col-span-2">⚡ Nomor Token Listrik (kosongkan jika bukan token)<input id="token" inputmode="numeric" class="inp" placeholder="1234-5678-9012-3456-7890"></label>
+      <label>ID Pelanggan<input id="idpel" class="inp"></label>
+      <label>No. Meter<input id="meter" class="inp"></label>
+      <label>Tarif / Daya<input id="tarif" class="inp" placeholder="R1/900VA"></label>
+      <label class="col-span-2 sm:col-span-1">kWh<input id="kwh" class="inp"></label>
+      <label>Periode Tagihan<input id="periode" class="inp" placeholder="OKT 2026"></label>
+      <label class="col-span-2">Stand Meter (awal - akhir)<input id="stand" class="inp"></label>
+      <label>Nominal (Rp)<input id="nominal" type="number" inputmode="numeric" class="inp"></label>
+      <label>Biaya Admin (Rp)<input id="admin" type="number" inputmode="numeric" class="inp"></label>
+    </div>
+    <div class="mt-3 text-sm bg-green-50 border border-green-200 rounded p-2">Total Bayar: <b id="totalTxt">Rp0</b></div>
+  </div>
+
+</div>
+<div id="tabSet" class="space-y-4">
+  <!-- Settings -->
+  <div class="bg-white rounded-xl shadow p-4">
+    <h2 class="font-semibold mb-2">Pengaturan Toko <span class="text-xs font-normal text-slate-500">(tersimpan otomatis)</span></h2>
+    <div class="grid gap-2 text-sm">
+      <label>Margin kiri &amp; kanan struk (mm)<input id="margin" type="number" min="2" max="14" step="0.5" class="inp"></label>
+      <div><div class="font-medium text-slate-700">Logo Struk (opsional)</div>
+        <div class="flex items-center gap-2 mt-1"><input id="logoFile" type="file" accept="image/*" class="text-xs flex-1"><button id="logoDel" type="button" class="text-xs text-red-600 underline">Hapus</button></div>
+        <img id="logoPrev" class="hidden mt-2 h-14 border bg-white" alt="logo"></div>
+      <label>Nama Toko / Agen<input id="toko" class="inp"></label>
+      <label>Alamat / No. HP (baris 1)<input id="al1" class="inp"></label>
+      <label>Alamat / No. HP (baris 2)<input id="al2" class="inp"></label>
+      <label>Teks Footer<textarea id="footer" rows="3" class="inp"></textarea></label>
+      <label class="flex items-center gap-2"><input id="showSender" type="checkbox"> Tampilkan Nama Pengirim</label>
+      <label>Tampilan Biaya Admin
+        <select id="adminMode" class="inp">
+          <option value="pisah">Terpisah (Nominal + Admin + Total)</option>
+          <option value="gabung">Digabung ke Total saja</option>
+        </select>
+      </label>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="secPrev" class="space-y-3 lg:sticky lg:top-14 self-start">
+  <div class="bg-white rounded-xl shadow p-4">
+    <h2 class="font-semibold mb-3">Preview Struk (58mm)</h2>
+    <div class="bg-slate-200 py-3 rounded overflow-auto"><div id="struk" class="shadow"></div></div>
+    <div class="grid grid-cols-2 gap-2 mt-4 text-sm">
+      <button id="btnPrint" class="btn bg-blue-600">🖨️ Cetak (USB / RawBT)</button>
+      <button id="btnBt" class="btn bg-indigo-600">📶 Print Langsung (Bluetooth)</button>
+      <button id="btnPng" class="btn bg-green-600">🖼️ Simpan Gambar Struk</button>
+      <button id="btnDemo" class="btn bg-amber-500">✨ Isi Data Contoh</button>
+      <button id="btnTok" class="btn bg-yellow-600">⚡ Contoh Token</button>
+      <button id="btnLis" class="btn bg-orange-600">💡 Contoh Bayar Listrik</button>
+      <button id="btnReset" class="btn bg-slate-500 col-span-2">Reset Form</button>
+    </div>
+    <p id="btStatus" class="text-xs text-slate-500 mt-2"></p>
+  </div>
+</section>
+</main>
+
+<style>
+  .inp{display:block;width:100%;margin-top:2px;border:1px solid #cbd5e1;border-radius:.5rem;padding:.4rem .6rem;background:#fff}
+  .inp:focus{outline:2px solid #3b82f6;border-color:#3b82f6}
+  .btn{color:#fff;border-radius:.6rem;padding:.7rem .5rem;font-weight:600}
+  .btn:active{opacity:.8}
+  label{font-weight:500;color:#334155}
+  .miss{border-color:#ef4444!important;background:#fef2f2}
+</style>
+
+<script>
+const $ = id => document.getElementById(id);
+let COLS = 30;
+const FIELDS = ['src','jenis','waktu','ref','penerima','rek','pengirim','noPeng','token','idpel','meter','tarif','kwh','periode','stand','nominal','admin'];
+const SET = ['toko','al1','al2','footer','adminMode','margin'];
+const DEF = {toko:'ROYALIZ CELL', al1:'Jl. Contoh No. 1, Ciampea', al2:'WA/HP: 0812-3456-7890',
+  footer:'STRUK INI MERUPAKAN BUKTI PEMBAYARAN YANG SAH. HARAP DISIMPAN. TERIMA KASIH.', adminMode:'pisah', margin:'6', showSender:true};
+
+const rp = n => 'Rp' + (Number(n) || 0).toLocaleString('id-ID');
+const pad = n => String(n).padStart(2, '0');
+const nowLocal = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
+const fmtWaktu = v => { if (!v) return ''; const [d, t] = v.split('T'); const [y, m, dd] = d.split('-'); return `${dd}/${m}/${y} ${t || ''}`; };
+const total = () => (Number($('nominal').value) || 0) + (Number($('admin').value) || 0);
+
+/* ---------- Settings (localStorage) ---------- */
+function loadSettings() {
+  let s = {}; try { s = JSON.parse(localStorage.getItem('strukSet') || '{}'); } catch (e) {}
+  s = Object.assign({}, DEF, s);
+  SET.forEach(k => $(k).value = s[k]);
+  $('showSender').checked = !!s.showSender;
+}
+function saveSettings() {
+  const s = {}; SET.forEach(k => s[k] = $(k).value); s.showSender = $('showSender').checked;
+  try { localStorage.setItem('strukSet', JSON.stringify(s)); } catch (e) {}
+}
+
+const maskNo = s => { s = String(s || '').replace(/\s/g, ''); return s ? s.slice(0, 4) + '*'.repeat(Math.max(s.length - 4, 0)) : ''; };
+let logoBits = null, logoURL = '';
+
+/* ---------- Receipt model (dipakai preview & ESC/POS) ---------- */
+function model() {
+  const L = [], v = id => $(id).value.trim();
+  const tk = v('token').replace(/\D/g, ''), pln = !!(tk || v('idpel') || v('meter'));
+  const t = (t, a = 'l', b = 0, big = 0) => L.push({ y: 't', t, a, b, big });
+  const kv = (k, val, b = 0) => { if (val !== '' && val != null) L.push({ y: 'kv', k, v: String(val), b }); };
+  const sep = c => L.push({ y: 'sep', c });
+  if (logoBits) L.push({ y: 'img' });
+  t((v('toko') || 'AGEN BRILINK').toUpperCase(), 'c', 1, 1);
+  if (v('al1')) t(v('al1'), 'c'); if (v('al2')) t(v('al2'), 'c');
+  sep('=');
+  t('STRUK TRANSAKSI AGEN', 'c', 1);
+  if (v('jenis')) t(v('jenis').toUpperCase(), 'c');
+  sep('=');
+  kv('Tanggal', fmtWaktu($('waktu').value)); kv('No.Ref', v('ref'));
+  sep('-');
+  kv('Transaksi', v('jenis')); kv('Bank/App', v('src')); kv('No.Rek/HP', v('rek')); kv(pln ? 'Pelanggan' : 'Penerima', v('penerima'));
+  if ($('showSender').checked) { kv('Pengirim', v('pengirim')); kv('No.Pengirim', maskNo(v('noPeng'))); }
+  kv('ID Pel', v('idpel')); kv('No.Meter', v('meter')); kv('Tarif/Daya', v('tarif')); kv('kWh', v('kwh')); kv('Periode', v('periode')); kv('Stand Meter', v('stand'));
+  kv('Status', 'BERHASIL', 1);
+  sep('-');
+  if (tk) {
+    const g = tk.match(/.{1,4}/g);
+    t('TOKEN LISTRIK', 'c', 1);
+    L.push({ y: 'tok', lines: g.length <= 3 ? [g.join('-')] : [g.slice(0, 3).join('-'), g.slice(3).join('-')] });
+    sep('-');
+  }
+  if ($('adminMode').value === 'pisah') { kv('Nominal', rp($('nominal').value)); kv('Biaya Admin', rp($('admin').value)); sep('-'); }
+  kv('TOTAL BAYAR', rp(total()), 1);
+  sep('=');
+  if (v('footer')) t(v('footer'), 'c');
+  L.push({ y: 'feed' });
+  return L;
+}
+const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+function applyLayout() {
+  const m = Math.min(14, Math.max(2, parseFloat($('margin').value) || 6));
+  COLS = Math.min(32, Math.max(20, Math.floor((58 - 2 * m) * 8 / 12)));
+  const px = (58 - 2 * m) * 3.7795, st = $('struk');
+  st.style.padding = `2mm ${m}mm 0`; st.style.fontSize = (px / (COLS * 0.6)) + 'px';
+}
+function render() {
+  applyLayout();
+  $('totalTxt').textContent = rp(total());
+  $('struk').innerHTML = model().map(r =>
+    r.y === 'sep' ? `<div class="sep">${r.c.repeat(COLS)}</div>` :
+    r.y === 'kv' ? `<div class="kv ${r.b ? 'b' : ''}"><span>${esc(r.k)}</span><span>${esc(r.v)}</span></div>` :
+    r.y === 'tok' ? r.lines.map(x => `<div class="c b" style="font-size:2em;line-height:1.3">${x}</div>`).join('') :
+    r.y === 'img' ? `<img src="${logoURL}" style="display:block;margin:0 auto 2px;width:32mm">` :
+    r.y === 'feed' ? '<div class="feed"></div>' :
+    `<div class="${r.a === 'c' ? 'c' : ''} ${r.b ? 'b' : ''}" style="${r.big ? 'font-size:1.3em' : ''}">${esc(r.t)}</div>`).join('');
+}
+function bindAll() {
+  FIELDS.concat(SET, ['showSender']).forEach(id => $(id).addEventListener('input', () => { $(id).classList.remove('miss'); render(); saveSettings(); }));
+}
+
+/* ---------- Print & PNG ---------- */
+$('btnPrint').onclick = () => window.print();
+$('btnPng').onclick = async () => {
+  try {
+    const c = await html2canvas($('struk'), { scale: 3, backgroundColor: '#ffffff' });
+    const a = document.createElement('a'); a.download = 'struk-' + Date.now() + '.png'; a.href = c.toDataURL('image/png'); a.click();
+  } catch (e) { alert('Gagal membuat gambar: ' + e.message); }
+};
+
+/* ---------- ESC/POS via Web Bluetooth ---------- */
+let btChar = null;
+const wrap = (s, w) => { const out = []; let cur = ''; s.split(/\s+/).forEach(word => { while (word.length > w) { if (cur) { out.push(cur); cur = ''; } out.push(word.slice(0, w)); word = word.slice(w); } if ((cur + ' ' + word).trim().length > w) { out.push(cur); cur = word; } else cur = (cur + ' ' + word).trim(); }); if (cur) out.push(cur); return out; };
+function escpos() {
+  const bytes = [0x1B, 0x40]; const pre = ' '.repeat(Math.max(0, Math.floor((32 - COLS) / 2))); const enc = new TextEncoder();
+  const push = s => enc.encode(s.replace(/[^\x20-\x7E]/g, '?')).forEach(x => bytes.push(x));
+  const line = s => { push(s); bytes.push(0x0A); };
+  const align = n => bytes.push(0x1B, 0x61, n), bold = n => bytes.push(0x1B, 0x45, n), size = n => bytes.push(0x1B, 0x21, n);
+  model().forEach(r => {
+    if (r.y === 'sep') { align(0); line(pre + r.c.repeat(COLS)); }
+    else if (r.y === 'tok') { align(1); bold(1); size(0x30); r.lines.forEach(line); size(0); bold(0); }
+    else if (r.y === 'img') { align(1); const g = logoBits; bytes.push(0x1D, 0x76, 0x30, 0, g.wb & 255, g.wb >> 8, g.h & 255, g.h >> 8); g.data.forEach(x => bytes.push(x)); bytes.push(0x0A); }
+    else if (r.y === 'feed') { bytes.push(0x1B, 0x64, 4); }
+    else if (r.y === 'kv') {
+      align(0); bold(r.b);
+      if (r.k.length + r.v.length + 1 <= COLS) line(pre + r.k + ' '.repeat(COLS - r.k.length - r.v.length) + r.v);
+      else { line(pre + r.k); wrap(r.v, COLS - 2).forEach(x => line(pre + ' '.repeat(COLS - x.length) + x)); }
+      bold(0);
+    } else {
+      align(r.a === 'c' ? 1 : 0); bold(r.b); size(r.big ? 0x10 : 0);
+      wrap(r.t, COLS).forEach(line); size(0); bold(0);
+    }
+  });
+  align(0); bytes.push(0x1B, 0x64, 3);
+  return new Uint8Array(bytes);
+}
+async function btConnect() {
+  const st = $('btStatus');
+  if (!navigator.bluetooth) throw new Error('Browser tidak mendukung Web Bluetooth. Gunakan Chrome (Android/PC).');
+  const optionalServices = ['000018f0-0000-1000-8000-00805f9b34fb', '0000ffe0-0000-1000-8000-00805f9b34fb', '49535343-fe7d-4ae5-8fa9-9fafd205e455', 'e7810a71-73ae-499d-8c15-faa9aef0c3f2', '0000ff00-0000-1000-8000-00805f9b34fb', '0000fee7-0000-1000-8000-00805f9b34fb'];
+  st.textContent = 'Memilih printer...';
+  const dev = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices });
+  dev.addEventListener('gattserverdisconnected', () => { btChar = null; st.textContent = 'Printer terputus.'; });
+  st.textContent = 'Menghubungkan ' + (dev.name || 'printer') + '...';
+  const server = await dev.gatt.connect();
+  for (const svc of await server.getPrimaryServices()) {
+    for (const ch of await svc.getCharacteristics()) {
+      if (ch.properties.write || ch.properties.writeWithoutResponse) { btChar = ch; st.textContent = 'Terhubung: ' + (dev.name || 'printer'); return; }
+    }
+  }
+  throw new Error('Karakteristik tulis tidak ditemukan pada printer ini.');
+}
+$('btnBt').onclick = async () => {
+  try {
+    if (!btChar) await btConnect();
+    const data = escpos();
+    for (let i = 0; i < data.length; i += 100) {
+      const chunk = data.slice(i, i + 100);
+      if (btChar.properties.writeWithoutResponse) await btChar.writeValueWithoutResponse(chunk); else await btChar.writeValue(chunk);
+      await new Promise(r => setTimeout(r, 30));
+    }
+    $('btStatus').textContent = 'Struk terkirim ke printer ✔';
+  } catch (e) { btChar = null; $('btStatus').textContent = 'Gagal: ' + e.message; }
+};
+
+/* ---------- Tabs ---------- */
+function showTab(n) {
+  document.body.dataset.tab = n;
+  document.querySelectorAll('#tabs .tab').forEach(b => b.classList.toggle('on', b.dataset.tab === n));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('#tabs .tab').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+/* ---------- Upload / paste / drop ---------- */
+$('file').onchange = e => e.target.files[0] && handleImage(e.target.files[0]);
+['dragover', 'dragenter'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('bg-blue-50'); }));
+['dragleave', 'drop'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.remove('bg-blue-50'); }));
+$('drop').addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f && f.type.startsWith('image/')) handleImage(f); });
+document.addEventListener('paste', e => { for (const it of (e.clipboardData || {}).items || []) if (it.type.startsWith('image/')) { handleImage(it.getAsFile()); break; } });
+$('togglePrev').onclick = () => { const h = $('prev').classList.toggle('hidden'); $('togglePrev').textContent = h ? 'Tampilkan preview' : 'Sembunyikan preview'; };
+
+/* Pra-proses gambar: perbesar, grayscale, kontras (otomatis balik warna bila dark mode) */
+function prepCanvas(file) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const sc = Math.min(3, Math.max(1, 1600 / img.width));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+      const x = c.getContext('2d', { willReadFrequently: true }); x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, c.width, c.height);
+      const d = x.getImageData(0, 0, c.width, c.height), p = d.data; let sum = 0;
+      for (let i = 0; i < p.length; i += 4) { const g = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]; p[i] = g; sum += g; }
+      const inv = sum / (p.length / 4) < 110;
+      for (let i = 0; i < p.length; i += 4) { let g = inv ? 255 - p[i] : p[i]; g = Math.max(0, Math.min(255, (g - 128) * 1.35 + 128)); p[i] = p[i + 1] = p[i + 2] = g; p[i + 3] = 255; }
+      x.putImageData(d, 0, 0); res(c);
+    };
+    img.onerror = () => rej(new Error('Gambar tidak bisa dibaca'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+const LBL = { ref: 'No. Ref', nominal: 'Nominal', idpel: 'ID Pelanggan', token: 'Nomor Token', kwh: 'kWh' };
+async function handleImage(file) {
+  $('prev').src = URL.createObjectURL(file); $('prev').classList.remove('hidden');
+  $('prevWrap').classList.remove('hidden'); $('togglePrev').textContent = 'Sembunyikan preview';
+  $('prog').classList.remove('hidden'); $('bar').style.width = '0%'; $('progTxt').textContent = 'Memuat engine OCR...'; $('progTxt').className = 'text-xs mb-1';
+  FIELDS.forEach(id => { if (id !== 'admin') $(id).value = ''; $(id).classList.remove('miss'); });
+  let worker;
+  try {
+    const cv = await prepCanvas(file);
+    worker = await Tesseract.createWorker('ind+eng', 1, { logger: m => {
+      if (m.progress != null) { $('bar').style.width = Math.round(m.progress * 100) + '%'; $('progTxt').textContent = m.status + ' ' + Math.round(m.progress * 100) + '%'; }
+    } });
+    await worker.setParameters({ preserve_interword_spaces: '1' });
+    let text = (await worker.recognize(cv)).data.text, miss = parseText(text);
+    if (miss.length) {
+      $('progTxt').textContent = 'Memeriksa ulang bagian yang belum terbaca...';
+      await worker.setParameters({ tessedit_pageseg_mode: '11' });
+      text += '\n' + (await worker.recognize(cv)).data.text; miss = parseText(text);
+    }
+    if (miss.length) {
+      miss.forEach(id => $(id).classList.add('miss'));
+      $('progTxt').textContent = '⚠ Belum terbaca: ' + miss.map(i => LBL[i]).join(', ') + ' — isi manual (kolom merah).'; $('progTxt').className = 'text-xs mb-1 text-red-600 font-semibold';
+    } else { $('progTxt').textContent = 'Selesai ✔ Periksa & koreksi data bila perlu.'; }
+    $('bar').style.width = '100%';
+  } catch (e) { $('progTxt').textContent = 'OCR gagal: ' + e.message + ' (butuh koneksi internet)'; }
+  finally { if (worker) { try { await worker.terminate(); } catch (e) {} } }
+}
+
+/* ---------- Smart Parser ---------- */
+const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, mei: 5, may: 5, jun: 6, jul: 7, agu: 8, aug: 8, ags: 8, sep: 9, okt: 10, oct: 10, nov: 11, des: 12, dec: 12 };
+function parseText(raw) {
+  raw = raw.replace(/\r/g, '');
+  const lines = raw.split('\n').map(s => s.trim()).filter(Boolean), up = raw.toUpperCase();
+  const D = '[\\dOoIl|]', SEP = '[\\s\\-–—‑−_.]{0,2}', SEPR = '[\\s\\-–—‑−]{1,2}', NB = '(?<![\\dA-Za-z])', NA = '(?![\\dA-Za-z])';
+  const dg = s => s.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/\D/g, '');
+  const set = (id, v) => { if (v) $(id).value = v; };
+  const valAll = re => { const rx = new RegExp('^(?:' + re + ')\\s*[:\\-]?\\s*(.*)$', 'i'), out = []; lines.forEach((l, i) => { const m = l.match(rx); if (m) out.push((m[1] || lines[i + 1] || '').trim()); }); return out; };
+  const val = re => valAll(re)[0] || '';
+  const money = s => /(?:Rp|IDR)\s*\.?\s*\d|\d{1,3}(?:[.,]\d{3})+/i.test(s || '');
+  const amtIn = s => { const m = (s || '').match(/\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?(?!\d)|\d+/g); if (!m) return ''; let x = m[m.length - 1]; if (/[.,]\d{1,2}$/.test(x) && /[.,]\d{3}/.test(x)) x = x.replace(/[.,]\d{1,2}$/, ''); return x.replace(/\D/g, ''); };
+  const amtLine = (re, ex) => { for (let i = 0; i < lines.length; i++) { const l = lines[i]; if (!re.test(l) || (ex && ex.test(l))) continue; if (money(l)) return amtIn(l.replace(re, ' ')); if (money(lines[i + 1]) && !(ex && ex.test(lines[i + 1]))) return amtIn(lines[i + 1]); } return ''; };
+
+  // Sumber aplikasi / bank
+  const srcs = [['ALLO', 'Allo Wallet'], ['BRIMO', 'BRImo'], ['SEABANK', 'SeaBank'], ['GOPAY', 'GoPay'], ['SHOPEEPAY', 'ShopeePay'], ['LINKAJA', 'LinkAja'], ['OVO', 'OVO'], ['DANA', 'DANA'], ['LIVIN', 'Livin Mandiri'], ['MANDIRI', 'Mandiri'], ['BCA', 'BCA'], ['BNI', 'BNI'], ['JAGO', 'Bank Jago'], ['QRIS', 'QRIS'], ['BRI', 'BRI']];
+  const findSrc = t => srcs.find(x => new RegExp('\\b' + x[0] + '\\b').test(t.toUpperCase()));
+  const mp = val('metode\\s*pembayaran|sumber\\s*dana|payment\\s*method');
+  const s1 = (mp && findSrc(mp)) || findSrc(raw);
+  if (s1) set('src', s1[1]); else if (mp && mp.length <= 30) set('src', mp);
+
+  // Jenis transaksi
+  const jn = [[/TOKEN|PRABAYAR|PLN PREPAID/, 'Token Listrik PLN'], [/PASCABAYAR|TAGIHAN LISTRIK|TAGIHAN PLN|PLN NONTAGLIS|LISTRIK PASCA/, 'Pembayaran Listrik PLN'], [/QRIS/, 'Pembayaran QRIS'], [/TARIK TUNAI/, 'Tarik Tunai'], [/TOP ?UP|ISI SALDO/, 'Top Up E-Wallet'], [/TAGIHAN|PLN|BPJS|PDAM|PULSA/, 'Pembayaran Tagihan'], [/TRANSFER|KIRIM/, 'Transfer Bank']];
+  const j = jn.find(x => x[0].test(up)); if (j) set('jenis', j[1]);
+  const plnCtx = /PLN|LISTRIK|PRABAYAR|PASCABAYAR|PELANGGAN|TOKEN/.test(up);
+
+  // Nominal (total - admin aplikasi bila baris biaya listrik tidak ada). Biaya admin agen TIDAK ditimpa.
+  const tot = amtLine(/total\s*(?:pembayaran|bayar|tagihan|transaksi)?|jumlah\s*bayar/i);
+  const adm = amtLine(/admin|biaya\s*layanan|biaya\s*transaksi/i);
+  let nom = amtLine(/biaya\s*listrik|(?:jumlah\s*|total\s*|nilai\s*)?tagihan|nominal|harga|pembelian\s*token/i, /admin|denda/i);
+  if (!nom && tot) nom = String(Math.max(0, +tot - (+adm || 0)));
+  if (!nom) { const m = raw.match(/(?:Rp|IDR)\s*\.?\s*(\d[\d.,]*)/i); if (m) nom = amtIn(m[1]); }
+  set('nominal', nom);
+
+  // Token listrik (20 digit)
+  const tokRe = new RegExp(NB + '(?:' + D + '{4}' + SEP + '){4}' + D + '{4}' + NA);
+  const tokLab = val('(?:no\\.?\\s*|nomor\\s*)?token(?:\\s*listrik)?|stroom\\/token');
+  const tm = tokLab.match(tokRe) || (plnCtx ? raw.match(tokRe) : null);
+  const tokD = tm ? dg(tm[0]) : '';
+  if (tokD.length === 20) set('token', tokD.match(/.{4}/g).join('-'));
+  const rawN = tm ? raw.replace(tm[0], ' ') : raw;
+
+  // ID Pelanggan (12 digit) - prioritas utama, dengan beberapa lapis cadangan
+  const idRe = new RegExp(NB + D + '{4}' + SEP + D + '{4}' + SEP + D + '{4}' + NA);
+  const idReS = new RegExp(NB + D + '{4}' + SEPR + D + '{4}' + SEPR + D + '{4}' + NA);
+  let im = null;
+  for (const c of valAll('(?:id|no\\.?|nomor)\\s*pel(?:anggan)?|idpel|id\\s*plg|no\\.?\\s*pelanggan|nomor\\s*pelanggan')) { im = c.match(idRe); if (im) break; }
+  if (!im && plnCtx) im = rawN.match(idReS);
+  if (!im && plnCtx) { const all = rawN.match(new RegExp(NB + '\\d{12}' + NA, 'g')); if (all) im = [all[0]]; }
+  const idD = im ? dg(im[0]) : '';
+  if (idD) set('idpel', idD.replace(/(\d{4})(?=\d)/g, '$1-'));
+
+  // Nomor meter (11-12 digit)
+  let meD = '';
+  const mlab = val('nom[eo]r\\s*meter|no\\.?\\s*meter|no\\.?\\s*mtr|meter').replace(/[\s\-]/g, '');
+  const mm = mlab.match(new RegExp(NB + D + '{11,12}' + NA));
+  if (mm) meD = dg(mm[0]);
+  if (!meD && plnCtx) { const all = (rawN.match(new RegExp(NB + '\\d{11}' + NA, 'g')) || []).filter(x => x !== idD); if (all[0]) meD = all[0]; }
+  if (meD && meD !== idD) set('meter', meD);
+
+  // kWh
+  let kwv = (val('(?:jumlah|total)\\s*k[wv]{1,2}h|k[wv]{1,2}h|pemakaian(?:\\s*kwh)?').match(/\d+(?:[.,]\d+)?/) || [])[0];
+  if (!kwv) kwv = (raw.match(/(\d+(?:[.,]\d+)?)\s*k[wv]{1,2}h/i) || [])[1];
+  set('kwh', kwv);
+
+  // Tarif / daya
+  const tf = raw.match(/\b([RSBPIL]\d?)\s*\/?\s*(\d{3,5})\s*VA\b/i); if (tf) set('tarif', tf[1].toUpperCase() + '/' + tf[2] + 'VA');
+
+  // Periode & stand meter (pascabayar)
+  const pr = val('periode(?:\\s*tagihan)?|bulan\\s*tagihan|bln\\s*tagihan|periode\\s*bayar');
+  if (pr) set('periode', pr.replace(/\s+/g, ' ').slice(0, 20).toUpperCase());
+  const stm = val('stand\\s*meter|stan\\s*meter|stand').match(/\d[\d\s\-–\/]{3,}\d/);
+  if (stm) set('stand', stm[0].replace(/\s*[–\/]\s*/g, '-').replace(/\s+/g, ' ').trim());
+
+  // Tanggal & waktu (ambil dari baris "Tanggal Transaksi", bukan jam status bar HP)
+  const now = new Date(); let Y = now.getFullYear(), M = now.getMonth() + 1, D2 = now.getDate(), h = now.getHours(), mi = now.getMinutes(), sc = now.getSeconds();
+  const di = lines.findIndex(l => /^(?:tanggal|tgl|waktu)/i.test(l));
+  const S = di >= 0 ? lines.slice(di, di + 3).join(' ') : raw;
+  const iso = S.match(/(\d{4})-(\d{2})-(\d{2})/), dm = S.match(/(\d{1,2})[\/\-\s.]+(\d{1,2}|[A-Za-z]{3,9})[\/\-\s.,]+(\d{4})/) || (di >= 0 ? raw.match(/(\d{1,2})[\/\-\s.]+([A-Za-z]{3,9})[\/\-\s.,]+(\d{4})/) : null);
+  if (iso) { Y = +iso[1]; M = +iso[2]; D2 = +iso[3]; }
+  else if (dm) { const mo = isNaN(dm[2]) ? MONTHS[dm[2].slice(0, 3).toLowerCase()] : +dm[2]; if (mo) { D2 = +dm[1]; M = mo; Y = +dm[3]; } }
+  const tmm = S.match(/\b([01]?\d|2[0-3])[:.]([0-5]\d)(?:[:.]([0-5]\d))?(?!\d)/);
+  if (tmm) { h = +tmm[1]; mi = +tmm[2]; sc = +(tmm[3] || 0); }
+  $('waktu').value = `${Y}-${pad(M)}-${pad(D2)}T${pad(h)}:${pad(mi)}:${pad(sc)}`;
+
+  // No. Referensi = ID Transaksi
+  const okRef = c => { const m = (c || '').replace(/\s+/g, '').match(/[A-Za-z0-9\-]{8,}/); return m && /\d{4}/.test(m[0]) ? m[0] : ''; };
+  let ref = '';
+  for (const c of valAll('(?:no\\.?\\s*|nomor\\s*)?ref\\w*\\.?(?:\\s*(?:no|id|number)\\.?)?|id\\s*transaksi|no\\.?\\s*transaksi|nomor\\s*transaksi|trx\\s*id|transaction\\s*id|SN')) { ref = okRef(c); if (ref) break; }
+  if (!ref) ref = okRef((raw.match(/\bref\w*\.?\s*[:#\-]?\s*([A-Z0-9\-]{6,})/i) || [])[1]);
+  if (!ref) ref = (raw.match(/\b[A-Z0-9]{10,}\b/g) || []).filter(x => x !== tokD && x !== idD && x !== meD).sort((a, b) => b.length - a.length)[0] || '';
+  if (ref.length >= 10 && (ref.match(/\d/g) || []).length / ref.length >= 0.85) { const fx = ref.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[gq]/g, '9').replace(/[Ss]/g, '5').replace(/B/g, '8').replace(/[Zz]/g, '2'); if (/^\d+$/.test(fx)) ref = fx; }
+  set('ref', ref);
+
+  // Penerima / pelanggan
+  let name = '';
+  const pm = val('nama\\s*penerima|penerima|kepada|nama\\s*tujuan|nama\\s*pelanggan|nama\\s*plg').match(/[A-Za-z][A-Za-z .']{2,}/);
+  if (pm) name = pm[0].trim();
+  if (!name && plnCtx) {
+    const ai = lines.findIndex(l => /\*{4,}/.test(l)), pi = lines.findIndex(l => /(?:pra|pasca)bayar\s*\/|\b[RSBPIL]\d?\s*\/?\s*\d{3,5}\s*VA\b/i.test(l));
+    const BAD = /detail|pembelian|jenis|layanan|nomor|nomer|token|pelanggan|total|informasi|transaksi|metode|tanggal|jumlah|biaya|pembayaran|berhasil|prabayar|pascabayar|listrik|wallet|penilaian/i;
+    for (const i of [ai - 1, ai - 2, pi, pi - 1]) {
+      if (i < 0 || !lines[i]) continue;
+      const c = lines[i].replace(/(?:pra|pasca)bayar.*$/i, '').replace(/\b[RSBPIL]\d?\s*\/?\s*\d{3,5}\s*VA.*$/i, '').replace(/[^A-Za-z .']/g, ' ').replace(/^(?:[a-z]{1,2}\s+)+/, '').replace(/\s+/g, ' ').trim();
+      if (c.length >= 4 && /^[A-Z]/.test(c) && !BAD.test(c)) { name = c; break; }
+    }
+  }
+  set('penerima', name.toUpperCase());
+
+  // Rekening / HP tujuan (tidak untuk transaksi PLN)
+  if (!plnCtx) {
+    const rk = val('(?:no\\.?\\s*|nomor\\s*)?rek(?:ening)?(?:\\s*\\/\\s*(?:no\\.?\\s*)?hp)?(?!\\s*(?:sumber|asal|pengirim))(?:\\s*tujuan)?|(?:no\\.?\\s*|nomor\\s*)(?:hp|tujuan)(?:\\s*tujuan)?|tujuan');
+    let rm = rk.match(/\d[\d\s\-*xX]{6,}/);
+    if (!rm) { const all = (raw.match(/\b\d{9,16}\b/g) || []).filter(x => x !== ref && x !== nom); if (all[0]) rm = [all[0]]; }
+    if (rm) set('rek', rm[0].trim());
+  }
+
+  // Pengirim
+  const sd = val('pengirim|nama\\s*pengirim|sumber\\s*dana|dari').match(/[A-Za-z][A-Za-z .']{2,}/);
+  if (sd && !/wallet|dana|ovo/i.test(sd[0])) set('pengirim', sd[0].trim().toUpperCase());
+  const np = val('(?:no\\.?\\s*|nomor\\s*)(?:hp\\s*|rek\\w*\\s*)?pengirim|rek\\w*\\s*(?:sumber|asal|pengirim)|no\\.?\\s*hp\\s*pengirim').match(/\d[\d\s\-*xX]{5,}/);
+  if (np) set('noPeng', np[0].trim());
+  render();
+
+  // Daftar field penting yang masih kosong
+  const need = ['ref', 'nominal'];
+  if (plnCtx) need.push('idpel');
+  if (/token/i.test($('jenis').value)) need.push('token', 'kwh');
+  return need.filter(id => !$(id).value.trim());
+}
+
+/* ---------- Demo & Reset ---------- */
+$('btnDemo').onclick = () => {
+  Object.entries({ src: 'BRImo', jenis: 'Transfer Bank', waktu: nowLocal(), ref: 'BRI20261113001234', penerima: 'BUDI SANTOSO', rek: '1234567890', pengirim: 'SITI AMINAH', noPeng: '081234567890', token: '', idpel: '', meter: '', tarif: '', kwh: '', periode: '', stand: '', nominal: 500000, admin: 5000 }).forEach(([k, v]) => $(k).value = v);
+  render();
+};
+$('btnTok').onclick = () => {
+  Object.entries({ src: 'DANA', jenis: 'Token Listrik PLN', waktu: nowLocal(), ref: 'DN20261113778899', penerima: 'BUDI SANTOSO', rek: '', pengirim: 'SITI AMINAH', noPeng: '081234567890', token: '1234-5678-9012-3456-7890', idpel: '5384-1489-4042', meter: '45129856477', tarif: 'R1/450VA', kwh: '46,8', periode: '', stand: '', nominal: 100000, admin: 3000 }).forEach(([k, v]) => $(k).value = v);
+  render();
+};
+$('btnLis').onclick = () => {
+  Object.entries({ src: 'BRImo', jenis: 'Pembayaran Listrik PLN', waktu: nowLocal(), ref: 'BRI20261113445566', penerima: 'BUDI SANTOSO', rek: '', pengirim: 'SITI AMINAH', noPeng: '081234567890', token: '', idpel: '532012345678', meter: '45129856477', tarif: 'R1/1300VA', kwh: '120', periode: 'OKT 2026', stand: '00004210-00004330', nominal: 187500, admin: 2500 }).forEach(([k, v]) => $(k).value = v);
+  render();
+};
+$('btnReset').onclick = () => {
+  FIELDS.forEach(id => $(id).value = ''); $('waktu').value = nowLocal();
+  $('prevWrap').classList.add('hidden'); $('prog').classList.add('hidden'); $('file').value = ''; render();
+};
+
+/* ---------- Logo ---------- */
+function setLogo(url, save) {
+  const img = new Image();
+  img.onload = () => {
+    const W = 256, H = Math.min(120, Math.max(8, Math.round(img.height * W / img.width)));
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);
+    const sc = Math.min(W / img.width, H / img.height), dw = img.width * sc, dh = img.height * sc;
+    x.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    const px = x.getImageData(0, 0, W, H), wb = W / 8, data = new Uint8Array(wb * H);
+    for (let i = 0; i < W * H; i++) {
+      const g = 0.3 * px.data[i * 4] + 0.59 * px.data[i * 4 + 1] + 0.11 * px.data[i * 4 + 2], blk = g < 160;
+      if (blk) data[Math.floor(i / W) * wb + ((i % W) >> 3)] |= 0x80 >> (i % 8);
+      px.data[i * 4] = px.data[i * 4 + 1] = px.data[i * 4 + 2] = blk ? 0 : 255; px.data[i * 4 + 3] = 255;
+    }
+    x.putImageData(px, 0, 0);
+    logoURL = c.toDataURL('image/png'); logoBits = { w: W, h: H, wb, data };
+    $('logoPrev').src = logoURL; $('logoPrev').classList.remove('hidden');
+    if (save) { try { localStorage.setItem('strukLogo', logoURL); } catch (e) {} }
+    render();
+  };
+  img.src = url;
+}
+$('logoFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => setLogo(r.result, true); r.readAsDataURL(f); };
+$('logoDel').onclick = () => { logoBits = null; logoURL = ''; $('logoFile').value = ''; $('logoPrev').classList.add('hidden'); try { localStorage.removeItem('strukLogo'); } catch (e) {} render(); };
+function loadLogo() { try { const u = localStorage.getItem('strukLogo'); if (u) setLogo(u, false); } catch (e) {} }
+
+loadSettings(); loadLogo(); bindAll(); showTab('trx'); $('waktu').value = nowLocal(); render();
+</script>
+<script>
+(function () {
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function () {});
+  function route() { var t = location.hash.slice(1); if (['trx', 'set', 'prev'].indexOf(t) > -1 && window.showTab) showTab(t); }
+  route(); window.addEventListener('hashchange', route);
+  var dp = null, btn = document.createElement('button');
+  btn.textContent = '📲 Pasang Aplikasi'; btn.style.cssText = 'display:none;margin-top:6px;background:#fff;color:#1d4ed8;font-weight:700;font-size:12px;padding:6px 12px;border-radius:8px';
+  document.querySelector('header').appendChild(btn);
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); dp = e; if (!matchMedia('(display-mode: standalone)').matches) btn.style.display = 'inline-block'; });
+  btn.onclick = function () { if (dp) { dp.prompt(); dp.userChoice.then(function () { dp = null; btn.style.display = 'none'; }); } };
+  window.addEventListener('appinstalled', function () { btn.style.display = 'none'; });
+})();
+</script>
+</body>
+</html>
